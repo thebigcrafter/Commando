@@ -31,7 +31,8 @@ namespace CortexPE\Commando\args;
 
 
 use pocketmine\command\CommandSender;
-use pocketmine\network\mcpe\protocol\types\command\CommandEnum;
+use pocketmine\network\mcpe\protocol\types\command\CommandHardEnum;
+use pocketmine\network\mcpe\protocol\types\command\CommandParameter;
 use function array_keys;
 use function array_map;
 use function implode;
@@ -39,13 +40,13 @@ use function preg_match;
 use function strtolower;
 
 abstract class StringEnumArgument extends BaseArgument {
-
+	/** @var array<string, mixed> */
 	protected const VALUES = [];
 
 	public function __construct(string $name, bool $optional = false) {
 		parent::__construct($name, $optional);
 
-		$this->parameterData->enum = new CommandEnum($this->getEnumName(), $this->getEnumValues());
+		$this->parameterData = CommandParameter::enum($name, new CommandHardEnum("", $this->getEnumValues()), 0, $optional);
 	}
 
 	public function getNetworkType(): int {
@@ -60,12 +61,11 @@ abstract class StringEnumArgument extends BaseArgument {
 		);
 	}
 
-	public abstract function getEnumName(): string;
-
-	public function getValue(string $string) {
+	public function getValue(string $string): mixed {
 		return static::VALUES[strtolower($string)];
 	}
 
+	/** @return list<string> */
 	public function getEnumValues(): array {
 		return array_keys(static::VALUES);
 	}

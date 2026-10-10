@@ -64,7 +64,7 @@ class Vector3Argument extends BaseArgument {
 	}
 
 	public function isValidCoordinate(string $coordinate, bool $locatable): bool {
-		return (bool)preg_match("/^(?:" . ($locatable ? "(\\?:~-|~\+)?" : "") . "-?(?:\d+|\d*\.\d+))" . ($locatable ? "|~" : "") . "$/", $coordinate);
+		return (bool)preg_match("/^(?:" . ($locatable ? "(?:~-|~\+)?" : "") . "-?(?:\d+|\d*\.\d+))" . ($locatable ? "|~" : "") . "$/", $coordinate);
 	}
 
 	public function parse(string $argument, CommandSender $sender) : Vector3{
@@ -83,6 +83,7 @@ class Vector3Argument extends BaseArgument {
 					0 => $position->x,
 					1 => $position->y,
 					2 => $position->z,
+					default => throw new \LogicException("A vector coordinate index must be between 0 and 2"),
 				};
 			}
 			$vals[] = (float)$coord + (float)$offset;

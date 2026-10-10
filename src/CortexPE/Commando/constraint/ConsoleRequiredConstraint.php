@@ -36,10 +36,12 @@ use pocketmine\utils\TextFormat;
 
 class ConsoleRequiredConstraint extends BaseConstraint {
 
+    /** @param array<string, mixed> $args */
     public function test(CommandSender $sender, string $aliasUsed, array $args): bool {
         return $this->isVisibleTo($sender);
     }
 
+    /** @param array<string, mixed> $args */
     public function onFailure(CommandSender $sender, string $aliasUsed, array $args): void {
         $sender->sendMessage(TextFormat::RED . "This command must be executed from a server console."); // f*ck off grammar police
     }

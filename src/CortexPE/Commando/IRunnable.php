@@ -50,9 +50,9 @@ interface IRunnable {
 
     public function getUsageMessage():string;
 
-	/**
-	 * @return string[]
-	 */
+    /**
+     * @return string[]
+     */
     public function getPermissions(): array;
 
     /**

@@ -1,14 +1,23 @@
 {
   "name": "thebigcrafter/commando",
-  "description": "A Command Framework virion for PocketMine-MP ",
+  "description": "A command framework virion for PocketMine-MP",
   "type": "library",
   "license": "LGPL-3.0-only",
+  "require": {
+    "php": "^8.1",
+    "muqsit/simple-packet-handler": "0.1.6"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.1",
+    "pocketmine/pocketmine-mp": "^5.44.3"
+  },
   "autoload": {
     "psr-4": {
-      "CortexPE\\Commando\\": [
-        "src/CortexPE/Commando/"
-      ]
+      "CortexPE\\Commando\\": "src/CortexPE/Commando/"
     }
+  },
+  "scripts": {
+    "analyze": "phpstan analyse --configuration=phpstan.neon.dist --no-progress"
   },
   "extra": {
     "virion": {

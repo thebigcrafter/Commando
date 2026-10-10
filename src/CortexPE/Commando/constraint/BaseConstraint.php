@@ -55,9 +55,11 @@ abstract class BaseConstraint {
         return $this->context;
     }
 
-    abstract public function test(CommandSender $sender, string $aliasUsed, array $args): bool;
+	/** @param array<string, mixed> $args */
+	abstract public function test(CommandSender $sender, string $aliasUsed, array $args): bool;
 
-    abstract public function onFailure(CommandSender $sender, string $aliasUsed, array $args): void;
+	/** @param array<string, mixed> $args */
+	abstract public function onFailure(CommandSender $sender, string $aliasUsed, array $args): void;
 
     abstract public function isVisibleTo(CommandSender $sender): bool;
 }

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace CortexPE\Commando;
 
+
 use CortexPE\Commando\exception\HookAlreadyRegistered;
 use CortexPE\Commando\store\SoftEnumStore;
 use CortexPE\Commando\traits\IArgumentable;
@@ -38,19 +39,18 @@ use pocketmine\event\EventPriority;
 use pocketmine\event\Listener;
 use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\protocol\AvailableCommandsPacket;
-use pocketmine\network\mcpe\protocol\types\command\CommandEnum;
+use pocketmine\network\mcpe\protocol\serializer\AvailableCommandsPacketAssembler;
+use pocketmine\network\mcpe\protocol\serializer\AvailableCommandsPacketDisassembler;
+use pocketmine\network\mcpe\protocol\types\command\CommandHardEnum;
 use pocketmine\network\mcpe\protocol\types\command\CommandOverload;
 use pocketmine\network\mcpe\protocol\types\command\CommandParameter;
 use pocketmine\plugin\Plugin;
 use pocketmine\Server;
-use ReflectionClass;
-use function array_unshift;
-use function count;
+use function spl_object_id;
 
 class PacketHooker implements Listener {
 	/** @var bool */
 	private static bool $isRegistered = false;
-
 	/** @var bool */
 	private static bool $isIntercepting = false;
 
@@ -62,24 +62,31 @@ class PacketHooker implements Listener {
 		if(self::$isRegistered) {
 			throw new HookAlreadyRegistered("Event listener is already registered by another plugin.");
 		}
-		$interceptor = SimplePacketHandler::createInterceptor($registrant, EventPriority::HIGHEST, false);
+
+		$interceptor = SimplePacketHandler::createInterceptor($registrant, EventPriority::NORMAL, false);
 		$interceptor->interceptOutgoing(function(AvailableCommandsPacket $pk, NetworkSession $target) : bool{
 			if(self::$isIntercepting)return true;
 			$p = $target->getPlayer();
-			foreach($pk->commandData as $commandName => $commandData) {
-				$cmd = Server::getInstance()->getCommandMap()->getCommand($commandName);
+			if($p === null) {
+				return true;
+			}
+			$disassembled = AvailableCommandsPacketDisassembler::disassemble($pk);
+			$commandDataList = $disassembled->commandData;
+			foreach($commandDataList as $commandData) {
+				$cmd = Server::getInstance()->getCommandMap()->getCommand($commandData->getName());
 				if($cmd instanceof BaseCommand) {
 					foreach($cmd->getConstraints() as $constraint){
 						if(!$constraint->isVisibleTo($p)){
 							continue 2;
 						}
 					}
-					$pk->commandData[$commandName]->overloads = self::generateOverloads($p, $cmd);
+					$commandData->overloads = self::generateOverloads($p, $cmd);
 				}
+
 			}
-			$pk->softEnums = SoftEnumStore::getEnums();
 			self::$isIntercepting = true;
-			$target->sendDataPacket($pk);
+			//TODO: passing all soft enums here is probably not necessary? they should be referenced by the command parameters already
+			$target->sendDataPacket(AvailableCommandsPacketAssembler::assemble($commandDataList, [], array_values(SoftEnumStore::getEnums())));
 			self::$isIntercepting = false;
 			return false;
 		});
@@ -91,7 +98,7 @@ class PacketHooker implements Listener {
 	 * @param CommandSender $cs
 	 * @param BaseCommand $command
 	 *
-	 * @return CommandOverload[]
+	 * @return list<CommandOverload>
 	 */
 	private static function generateOverloads(CommandSender $cs, BaseCommand $command): array {
 		$overloads = [];
@@ -105,13 +112,14 @@ class PacketHooker implements Listener {
 					continue 2;
 				}
 			}
-			$scParam = new CommandParameter();
-			$scParam->paramName = $label;
-			$scParam->paramType = AvailableCommandsPacket::ARG_FLAG_VALID | AvailableCommandsPacket::ARG_FLAG_ENUM;
-			$scParam->isOptional = false;
-			$scParam->enum = new CommandEnum($label, [$label]);
 
-			$overloadList = self::generateOverloads($cs, $subCommand);
+			$scParam = CommandParameter::enum(
+				$label,
+				new CommandHardEnum($label, [$label]),
+				0,
+				optional: false
+			);
+			$overloadList = self::generateOverloadList($subCommand);
 			if(!empty($overloadList)){
 				foreach($overloadList as $overload) {
 					$overloads[] = new CommandOverload(false, [$scParam, ...$overload->getParameters()]);
@@ -131,7 +139,7 @@ class PacketHooker implements Listener {
 	/**
 	 * @param IArgumentable $argumentable
 	 *
-	 * @return CommandOverload[]
+	 * @return list<CommandOverload>
 	 */
 	private static function generateOverloadList(IArgumentable $argumentable): array {
 		$input = $argumentable->getArgumentList();
@@ -145,16 +153,19 @@ class PacketHooker implements Listener {
 			/** @var CommandParameter[] $set */
 			$set = [];
 			foreach($indexes as $k => $index){
-			   	$param = $set[$k] = clone $input[$k][$index]->getNetworkParameterData();
-			
-				if (isset($param->enum) && $param->enum instanceof CommandEnum) {
-					$refClass = new ReflectionClass(CommandEnum::class);
-					$refProp = $refClass->getProperty("enumName");
-					$refProp->setAccessible(true);
-					$refProp->setValue($param->enum, "enum#" . spl_object_id($param->enum));
+				$param = $set[$k] = clone $input[$k][$index]->getNetworkParameterData();
+
+				if(isset($param->enum) && $param->enum instanceof CommandHardEnum){
+					//TODO: This hack is not needed on PM's account as of 5.36.0, but since enums are initialised
+					//with an empty name in StringEnumArgument (and I don't know why), it's best to preserve the
+					//original behaviour
+					$param->enum = new CommandHardEnum(
+						"enum#" . spl_object_id($param->enum),
+						$param->enum->getValues()
+					);
 				}
 			}
-			$combinations[] =  new CommandOverload(false, $set);
+			$combinations[] = new CommandOverload(false, $set);
 
 			foreach($indexes as $k => $v){
 				$indexes[$k]++;
