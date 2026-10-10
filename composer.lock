@@ -4,8 +4,9 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "107e94ba679c23b9556a173d308b26dd",
-    "packages": [
+    "content-hash": "2996e9e6cdc67cf839c6c9bebe31acef",
+    "packages": [],
+    "packages-dev": [
         {
             "name": "adhocore/json-comment",
             "version": "1.2.1",
@@ -126,52 +127,6 @@
             "time": "2026-09-12T10:28:18+00:00"
         },
         {
-            "name": "muqsit/simple-packet-handler",
-            "version": "0.1.6",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Muqsit/SimplePacketHandler.git",
-                "reference": "4e7b399c61f2def3c088ecde96e15d1f9858914f"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Muqsit/SimplePacketHandler/zipball/4e7b399c61f2def3c088ecde96e15d1f9858914f",
-                "reference": "4e7b399c61f2def3c088ecde96e15d1f9858914f",
-                "shasum": ""
-            },
-            "require": {
-                "pocketmine/pocketmine-mp": "^5.0.0"
-            },
-            "type": "library",
-            "extra": {
-                "virion": {
-                    "spec": "3.0",
-                    "namespace-root": "muqsit\\simplepackethandler"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "GPL-3.0"
-            ],
-            "authors": [
-                {
-                    "name": "Muqsit",
-                    "email": "hackhack05@gmail.com"
-                }
-            ],
-            "description": "Handle specific data packets (virion for PMMP API 4.0.0)",
-            "support": {
-                "issues": "https://github.com/Muqsit/SimplePacketHandler/issues",
-                "source": "https://github.com/Muqsit/SimplePacketHandler/tree/0.1.6"
-            },
-            "time": "2026-02-17T11:40:38+00:00"
-        },
-        {
             "name": "netresearch/jsonmapper",
             "version": "v5.0.1",
             "source": {
@@ -221,6 +176,70 @@
                 "source": "https://github.com/cweiske/jsonmapper/tree/v5.0.1"
             },
             "time": "2026-02-22T16:28:03+00:00"
+        },
+        {
+            "name": "phpstan/phpstan",
+            "version": "2.3.1",
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/6155239b488e95d26d1ebd95c6b4bb294d7f09db",
+                "reference": "6155239b488e95d26d1ebd95c6b4bb294d7f09db",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.4|^8.0"
+            },
+            "conflict": {
+                "phpstan/phpstan-shim": "*"
+            },
+            "bin": [
+                "phpstan",
+                "phpstan.phar"
+            ],
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ondřej Mirtes"
+                },
+                {
+                    "name": "Markus Staab"
+                },
+                {
+                    "name": "Vincent Langlet"
+                }
+            ],
+            "description": "PHPStan - PHP Static Analysis Tool",
+            "keywords": [
+                "dev",
+                "static analysis"
+            ],
+            "support": {
+                "docs": "https://phpstan.org/user-guide/getting-started",
+                "forum": "https://github.com/phpstan/phpstan/discussions",
+                "issues": "https://github.com/phpstan/phpstan/issues",
+                "security": "https://github.com/phpstan/phpstan/security/policy",
+                "source": "https://github.com/phpstan/phpstan-src"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/ondrejmirtes",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/phpstan",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-10-08T21:09:11+00:00"
         },
         {
             "name": "pocketmine/bedrock-block-upgrade-schema",
@@ -1108,72 +1127,6 @@
                 }
             ],
             "time": "2026-08-23T07:59:31+00:00"
-        }
-    ],
-    "packages-dev": [
-        {
-            "name": "phpstan/phpstan",
-            "version": "2.3.1",
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/6155239b488e95d26d1ebd95c6b4bb294d7f09db",
-                "reference": "6155239b488e95d26d1ebd95c6b4bb294d7f09db",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.4|^8.0"
-            },
-            "conflict": {
-                "phpstan/phpstan-shim": "*"
-            },
-            "bin": [
-                "phpstan",
-                "phpstan.phar"
-            ],
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "bootstrap.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Ondřej Mirtes"
-                },
-                {
-                    "name": "Markus Staab"
-                },
-                {
-                    "name": "Vincent Langlet"
-                }
-            ],
-            "description": "PHPStan - PHP Static Analysis Tool",
-            "keywords": [
-                "dev",
-                "static analysis"
-            ],
-            "support": {
-                "docs": "https://phpstan.org/user-guide/getting-started",
-                "forum": "https://github.com/phpstan/phpstan/discussions",
-                "issues": "https://github.com/phpstan/phpstan/issues",
-                "security": "https://github.com/phpstan/phpstan/security/policy",
-                "source": "https://github.com/phpstan/phpstan-src"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/ondrejmirtes",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/phpstan",
-                    "type": "github"
-                }
-            ],
-            "time": "2026-10-08T21:09:11+00:00"
         }
     ],
     "aliases": [],

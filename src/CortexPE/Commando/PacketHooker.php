@@ -33,12 +33,11 @@ namespace CortexPE\Commando;
 use CortexPE\Commando\exception\HookAlreadyRegistered;
 use CortexPE\Commando\store\SoftEnumStore;
 use CortexPE\Commando\traits\IArgumentable;
-use muqsit\simplepackethandler\SimplePacketHandler;
 use pocketmine\command\CommandSender;
 use pocketmine\event\EventPriority;
-use pocketmine\event\Listener;
-use pocketmine\network\mcpe\NetworkSession;
+use pocketmine\event\server\DataPacketSendEvent;
 use pocketmine\network\mcpe\protocol\AvailableCommandsPacket;
+use pocketmine\network\mcpe\NetworkBroadcastUtils;
 use pocketmine\network\mcpe\protocol\serializer\AvailableCommandsPacketAssembler;
 use pocketmine\network\mcpe\protocol\serializer\AvailableCommandsPacketDisassembler;
 use pocketmine\network\mcpe\protocol\types\command\CommandHardEnum;
@@ -48,7 +47,7 @@ use pocketmine\plugin\Plugin;
 use pocketmine\Server;
 use function spl_object_id;
 
-class PacketHooker implements Listener {
+class PacketHooker {
 	/** @var bool */
 	private static bool $isRegistered = false;
 	/** @var bool */
@@ -63,35 +62,66 @@ class PacketHooker implements Listener {
 			throw new HookAlreadyRegistered("Event listener is already registered by another plugin.");
 		}
 
-		$interceptor = SimplePacketHandler::createInterceptor($registrant, EventPriority::NORMAL, false);
-		$interceptor->interceptOutgoing(function(AvailableCommandsPacket $pk, NetworkSession $target) : bool{
-			if(self::$isIntercepting)return true;
-			$p = $target->getPlayer();
-			if($p === null) {
-				return true;
-			}
-			$disassembled = AvailableCommandsPacketDisassembler::disassemble($pk);
-			$commandDataList = $disassembled->commandData;
-			foreach($commandDataList as $commandData) {
-				$cmd = Server::getInstance()->getCommandMap()->getCommand($commandData->getName());
-				if($cmd instanceof BaseCommand) {
-					foreach($cmd->getConstraints() as $constraint){
-						if(!$constraint->isVisibleTo($p)){
-							continue 2;
-						}
+		Server::getInstance()->getPluginManager()->registerEvent(
+			DataPacketSendEvent::class,
+			function(DataPacketSendEvent $event) : void{
+				if(self::$isIntercepting) {
+					return;
+				}
+				$packets = $event->getPackets();
+				$hasAvailableCommands = false;
+				foreach($packets as $packet) {
+					if($packet instanceof AvailableCommandsPacket) {
+						$hasAvailableCommands = true;
+						break;
 					}
-					$commandData->overloads = self::generateOverloads($p, $cmd);
+				}
+				if(!$hasAvailableCommands) {
+					return;
 				}
 
-			}
-			self::$isIntercepting = true;
-			//TODO: passing all soft enums here is probably not necessary? they should be referenced by the command parameters already
-			$target->sendDataPacket(AvailableCommandsPacketAssembler::assemble($commandDataList, [], array_values(SoftEnumStore::getEnums())));
-			self::$isIntercepting = false;
-			return false;
-		});
+				foreach($event->getTargets() as $target) {
+					$player = $target->getPlayer();
+					if($player === null) {
+						return;
+					}
+					$rewritten = [];
+					foreach($packets as $packet) {
+						$rewritten[] = $packet instanceof AvailableCommandsPacket ? self::rewriteAvailableCommands($packet, $player) : $packet;
+					}
+					self::$isIntercepting = true;
+					try {
+						NetworkBroadcastUtils::broadcastPackets([$player], $rewritten);
+					} finally {
+						self::$isIntercepting = false;
+					}
+				}
+				$event->cancel();
+			},
+			EventPriority::NORMAL,
+			$registrant,
+			false
+		);
 		
 		self::$isRegistered = true;
+	}
+
+	private static function rewriteAvailableCommands(AvailableCommandsPacket $packet, CommandSender $sender): AvailableCommandsPacket {
+		$disassembled = AvailableCommandsPacketDisassembler::disassemble($packet);
+		$commandDataList = $disassembled->commandData;
+		foreach($commandDataList as $commandData) {
+			$cmd = Server::getInstance()->getCommandMap()->getCommand($commandData->getName());
+			if($cmd instanceof BaseCommand) {
+				foreach($cmd->getConstraints() as $constraint){
+					if(!$constraint->isVisibleTo($sender)){
+						continue 2;
+					}
+				}
+				$commandData->overloads = self::generateOverloads($sender, $cmd);
+			}
+		}
+
+		return AvailableCommandsPacketAssembler::assemble($commandDataList, [], array_values(SoftEnumStore::getEnums()));
 	}
 
 	/**
